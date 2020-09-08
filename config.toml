@@ -92,11 +92,10 @@ disqusShortname = ""
     # Display your showcases here.
     
     [[params.tiles.showcase]]
-      title = "Beer, Wine and Spirits Consumption"
-      subtitle = "Ipsum Dolor Sit Amet"
+      title = "NYT Masks"
+      subtitle = "An analysis of mask use in the US"
       image = "pic01.jpg"
-      url = "blogs/aliquam"
-
+      url = "blogs/blog5.md.Rmd"
     [[params.tiles.showcase]]
       title = "Tempus"
       subtitle = "Feugiat Amet Tempus"
