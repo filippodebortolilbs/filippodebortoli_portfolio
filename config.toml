@@ -95,7 +95,7 @@ disqusShortname = ""
       title = "NYT Masks"
       subtitle = "An analysis of mask use in the US"
       image = "pic01.jpg"
-      url = "blogs/blog5.md.html"
+      url = "blogs/blog5.md"
     [[params.tiles.showcase]]
       title = "Tempus"
       subtitle = "Feugiat Amet Tempus"
