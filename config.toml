@@ -67,9 +67,9 @@ disqusShortname = ""
     #    url = "UrlOfLink"
 
     # Button Style 1
-    [[params.navigation.button1]]
-      name = "Get Started"
-      url = "blogs"
+    #[[params.navigation.button1]]
+    #  name = "Get Started"
+     # url = "blogs"
 
     # Button Style 2
     [[params.navigation.button2]]
@@ -127,7 +127,7 @@ disqusShortname = ""
      # url = "blogs/ipsum"
     # You can make more showcases by copy and pasting the code above
 
-  [params.blog]
+  #[params.blog]
     # All blogs defined in their own files. You can find example blogs
     # at 'exampleSite/content/blogs'. Copy the 'blogs' folder into the 'content' directory
     # at the root of this Hugo site.
@@ -135,12 +135,12 @@ disqusShortname = ""
     # To add more blogs just copy and paste the code.
 
   # Section Type Two
-  [params.two]
-    enable = true
-    title = "Some of my analtics works in the Master in Analytics and Management at LBS"
+  #[params.two]
+    #enable = true
+   # title = "Some of my analtics works in the Master in Analytics and Management at LBS"
     #subtitle = """Nul """
-    buttonText = "Get Started"
-    url = "blogs"
+    #buttonText = "Get Started"
+    #url = "blogs"
 
 
   # Contact section
