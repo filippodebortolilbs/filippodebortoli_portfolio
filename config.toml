@@ -94,12 +94,12 @@ disqusShortname = ""
     [[params.tiles.showcase]]
       title = "Formulating a model for the Salary Structure in a bank"
       subtitle = "Regression analysis and examination of high earning individuals"
-      image = "banks.jpg"
+      image = "blogs/banks.jpg"
       url = "blogs/bank1"
     [[params.tiles.showcase]]
       title = "NYT Masks"
       subtitle = "An analysis of mask use in the US"
-      image = "statuemask.jpg"
+      image = "blogs/statuemask.jpg"
       url = "blogs/blog5"
 
     [[params.tiles.showcase]]
@@ -175,7 +175,7 @@ disqusShortname = ""
 
     [[params.contact.address]]
     title = "Address"
-    street = "Regent's Parl"
+    street = "Regent's Park"
     city = "London"
     country = "United Kingdom"
 
