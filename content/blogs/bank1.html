@@ -1,0 +1,718 @@
+---
+title: "Formulating a Regression model for Salaries within a bank"
+author: "Filippo de Bortoli & Jason Lubner"
+date: "15/09/2020"
+output: html_document
+---
+
+
+
+<pre class="r"><code>library(lmtest)</code></pre>
+<pre><code>## Loading required package: zoo</code></pre>
+<pre><code>## 
+## Attaching package: &#39;zoo&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     as.Date, as.Date.numeric</code></pre>
+<pre class="r"><code>library(MASS)
+library(car)</code></pre>
+<pre><code>## Loading required package: carData</code></pre>
+<pre class="r"><code>library(formula.tools)
+library(leaps)
+library(dplyr)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;dplyr&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:car&#39;:
+## 
+##     recode</code></pre>
+<pre><code>## The following object is masked from &#39;package:MASS&#39;:
+## 
+##     select</code></pre>
+<pre><code>## The following objects are masked from &#39;package:stats&#39;:
+## 
+##     filter, lag</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     intersect, setdiff, setequal, union</code></pre>
+<pre class="r"><code>library(readr)</code></pre>
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>The data provided is from an anonomous bank, which includes the information on 208 employees of a certain bank, with 11 fields of interest filled with information of each employee. These are all middle ranking members of staff; excluding menial workers and senior management. Unfortunately, we are unable to specify the method of selection or if it includes all the middle ranking employees in the bank. However, we will assume it is simple random sampling, so it is unbiased though we cannot verify the precision of the data set.
+In this report we are analysing the relation between the employee salary (in pounds) and the 10 other variables. The other variables include: Employee, Education level (“EducLev”); Job grade (“JobGrade”); Year born (“YrHired”); Gender (“Gender”); Performance review (“PerfRev”); IT job (“ITJob”); Years’ experience (“YrsExper”) and Age (“Age”).</p>
+<p>We will be using all this information to produce a statistical regression model to predict the salary as well as analysing the final result in comparison to our hypothesis on which variables we would have thought to be the most influential on the salary of employees.</p>
+<pre class="r"><code>library(here)</code></pre>
+<pre><code>## here() starts at C:/Users/filod/OneDrive/Documents/LBS/Term 1/Applied Statistics with R/filippodebortoli_portfolio</code></pre>
+<pre class="r"><code>bank &lt;-read_csv(&quot;Bank.1.csv&quot;)</code></pre>
+<pre><code>## Parsed with column specification:
+## cols(
+##   Employee = col_double(),
+##   EducLev = col_character(),
+##   JobGrade = col_double(),
+##   YrHired = col_double(),
+##   YrBorn = col_double(),
+##   Gender = col_double(),
+##   PerfRev = col_double(),
+##   ITJob = col_double(),
+##   Salary = col_double(),
+##   YrsExper = col_double(),
+##   Age = col_double()
+## )</code></pre>
+<pre class="r"><code>bank1=na.omit(bank) #removing data points with NA values
+summary(bank1) # get a summary of the data</code></pre>
+<pre><code>##     Employee        EducLev             JobGrade        YrHired    
+##  Min.   :  1.00   Length:208         Min.   :1.000   Min.   :1988  
+##  1st Qu.: 53.75   Class :character   1st Qu.:1.000   1st Qu.:2008  
+##  Median :105.50   Mode  :character   Median :3.000   Median :2012  
+##  Mean   :105.48                      Mean   :2.716   Mean   :2010  
+##  3rd Qu.:157.25                      3rd Qu.:4.000   3rd Qu.:2014  
+##  Max.   :209.00                      Max.   :6.000   Max.   :2017  
+##      YrBorn         Gender          PerfRev          ITJob       
+##  Min.   :1957   Min.   :0.0000   Min.   :0.000   Min.   :0.0000  
+##  1st Qu.:1976   1st Qu.:0.0000   1st Qu.:3.000   1st Qu.:0.0000  
+##  Median :1985   Median :0.0000   Median :4.000   Median :1.0000  
+##  Mean   :1983   Mean   :0.3269   Mean   :4.404   Mean   :0.5673  
+##  3rd Qu.:1991   3rd Qu.:1.0000   3rd Qu.:6.000   3rd Qu.:1.0000  
+##  Max.   :2001   Max.   :1.0000   Max.   :8.000   Max.   :1.0000  
+##      Salary          YrsExper           Age       
+##  Min.   : 42.00   Min.   : 0.000   Min.   :17.00  
+##  1st Qu.: 59.00   1st Qu.: 4.000   1st Qu.:27.00  
+##  Median : 67.00   Median : 7.000   Median :33.00  
+##  Mean   : 72.22   Mean   : 8.827   Mean   :35.21  
+##  3rd Qu.: 79.00   3rd Qu.:12.250   3rd Qu.:42.00  
+##  Max.   :138.00   Max.   :34.000   Max.   :61.00</code></pre>
+<pre class="r"><code>plot(bank1)#Overview of the data </code></pre>
+<p><img src="/blogs/bank1_files/figure-html/overview-1.png" width="672" /></p>
+<pre class="r"><code>bank</code></pre>
+<pre><code>## # A tibble: 237 x 11
+##    Employee EducLev JobGrade YrHired YrBorn Gender PerfRev ITJob Salary YrsExper
+##       &lt;dbl&gt; &lt;chr&gt;      &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;
+##  1        1 5              6    1988   1957      1       5     0    122       29
+##  2        2 4              1    2009   1959      0       6     1     53        8
+##  3        3 4              1    2013   1961      0       1     1     61        4
+##  4        4 4              3    1992   1961      0       7     1     78       25
+##  5        5 5              6    2005   1961      1       7     0    104       32
+##  6        7 5              6    1991   1962      1       6     0    138       33
+##  7        8 4              1    2001   1963      0       4     1     76       16
+##  8        9 4              2    2003   1963      0       5     1     61       14
+##  9       10 4              3    1996   1963      0       3     0     72       21
+## 10       11 3              6    2013   1963      1       2     0    134       34
+## # ... with 227 more rows, and 1 more variable: Age &lt;dbl&gt;</code></pre>
+</div>
+<div id="methodology" class="section level2">
+<h2>Methodology</h2>
+<p>Progression from Full Model to Final Model</p>
+</div>
+<div id="initial-analysis-of-data" class="section level2">
+<h2>1) Initial Analysis of data</h2>
+<p>We acknowledged that the year born, and age were perfectly correlated variables and hence yielded equivalent values. From there, we began our analysis of the raw data in the bankl.xls file. We looked through the data for any possible “red flags” that could potentially affect the outcome. Employee (91), who had their education level as N/A was deemed as unreliable datum since there is no education level included within the range and we cannot assume or estimate said level.</p>
+<p>We also believed that the education level can have quite an impact on the salary of an employee thus, we removed it (using na.omit using R) and used the remaining 207 employee as our data set, which we believed would be substantial.
+There were a few other potential “red flags” particularly employee 208 who at 17-year-old is earning £59,000 which we deemed rather questionable due to his lack of experience in the banking sector, rather low Education level and job grade. We debated whether to remove this employee from the study. However, due to the number of employees being analysed this may have unnecessarily reduced the precision/accuracy of the regression model we created without further analysis to prove if it was indeed an outlier (which in fact proved not to be after checking outlier criteria).</p>
+<pre class="r"><code>formula.fullmodel &lt;- Salary ~ EducLev + JobGrade + YrHired + Gender + PerfRev + ITJob + YrsExper + Age
+model.allvars = lm(formula.fullmodel,data=bank1)
+
+summary(model.allvars)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = formula.fullmodel, data = bank1)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -22.961  -5.712  -1.339   5.366  29.442 
+## 
+## Coefficients:
+##               Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept) -1.028e+03  3.683e+02  -2.792  0.00576 ** 
+## EducLev2     2.621e+00  4.649e+00   0.564  0.57347    
+## EducLev3     3.900e+00  4.394e+00   0.888  0.37582    
+## EducLev4     3.609e+00  4.203e+00   0.859  0.39148    
+## EducLev5     7.148e+00  4.386e+00   1.630  0.10475    
+## EducLevN/A   3.240e+00  1.011e+01   0.320  0.74906    
+## JobGrade     7.918e+00  6.157e-01  12.860  &lt; 2e-16 ***
+## YrHired      5.262e-01  1.826e-01   2.881  0.00441 ** 
+## Gender       4.962e+00  1.501e+00   3.306  0.00113 ** 
+## PerfRev      7.749e-01  4.042e-01   1.917  0.05671 .  
+## ITJob        8.196e-01  1.298e+00   0.632  0.52845    
+## YrsExper     8.878e-01  1.898e-01   4.678 5.42e-06 ***
+## Age          9.643e-02  9.590e-02   1.005  0.31591    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 9.062 on 195 degrees of freedom
+## Multiple R-squared:  0.7913, Adjusted R-squared:  0.7785 
+## F-statistic: 61.62 on 12 and 195 DF,  p-value: &lt; 2.2e-16</code></pre>
+<pre class="r"><code>plot(model.allvars)#RESIDUAL PLOT ANALYSIS</code></pre>
+<pre><code>## Warning: not plotting observations with leverage one:
+##   91</code></pre>
+<p><img src="/blogs/bank1_files/figure-html/estimate_models-1.png" width="672" /><img src="/blogs/bank1_files/figure-html/estimate_models-2.png" width="672" /><img src="/blogs/bank1_files/figure-html/estimate_models-3.png" width="672" /><img src="/blogs/bank1_files/figure-html/estimate_models-4.png" width="672" /></p>
+<pre class="r"><code>bptest(model.allvars)</code></pre>
+<pre><code>## 
+##  studentized Breusch-Pagan test
+## 
+## data:  model.allvars
+## BP = 29.104, df = 12, p-value = 0.003802</code></pre>
+<pre class="r"><code>hist(rstandard(model.allvars))</code></pre>
+<p><img src="/blogs/bank1_files/figure-html/estimate_models-5.png" width="672" />
+##2) Regression Analysis
+After, removing the questionable data with enough reasoning, we were ready to run our first regression but before that we looked at the plot (“plot” in pairs) of the all the variables. This proved our initial assumption that the year born, and age are the same, as they are perfectly correlated.</p>
+<p>After this, we then ran the first regression using salary against all the remaining 8 other variables (“formula.fullmodel”). The F-test, is within the 5% significance level, which means there is a regression between salary and the variables. Looking at the R squared value, which is quite high (close to 1) at 0.7891 shows the model is quite effective and that the data is close to the fitted regression line, as well as the adjusted R squared, 0.7806, being very close to the R squared, improving the reliability of the model. By analysing the co-efficients and their respective p-values we can already see which variables show significance like JobGrade, Gender and YrsExper which are significant at 0.001 as well as YrHired, PerfRev significant at the 0.01 and 0.05 level respectively.</p>
+<p>We then analysed the residual plots, which overall seemed to show correlation however, it could be improved. Firstly, the Q-Q plot, at both ends sways off the line of correlation so it doesn’t maintain the 45-degree line we would hope for, proving it isn’t perfectly distributed. The other graph that really stood out was residuals vs fitted since as it shows a “U-shaped” slope as well as heteroscedasticity issues. We were able to confirm our suspicions of heteroscedasticity by performing a studentized Breusch-Pagan test (“bp-test”); which concluded that the p value was significant, hence heteroscedasticity was present and we required a transformation. The Residual vs Leverage graph also indicated leveraging issues that needed adjustment.Finally reviewing a histogram of the residuals distribution seems to reflect a underlying normal distribution, however does reflect outliers at the tails.</p>
+<pre class="r"><code>#formula.sqrt&lt;- update.formula(formula.fullmodel,sqrt(Salary)~.)
+#model.sqrt &lt;- lm(formula.sqrt,data=bank1)
+#bptest(model.log) #tried sqrt transformation
+
+#formula.boxcox&lt;- update.formula(formula.fullmodel,boxcox(Salary)~.,lamda=-0.5)
+#model.sqrt &lt;- lm(formula.boxcox,data=bank1)
+#bptest(model.log) #tried sqrt transformation
+
+
+formula.log &lt;- update.formula(formula.fullmodel,log(Salary)~.)
+model.log &lt;- lm(formula.log,data=bank1)
+plot(model.log)# the transformation seems have to reduced the U shaped issue and removed the heteroskedasticity </code></pre>
+<pre><code>## Warning: not plotting observations with leverage one:
+##   91</code></pre>
+<p><img src="/blogs/bank1_files/figure-html/transformations-1.png" width="672" /><img src="/blogs/bank1_files/figure-html/transformations-2.png" width="672" /><img src="/blogs/bank1_files/figure-html/transformations-3.png" width="672" /><img src="/blogs/bank1_files/figure-html/transformations-4.png" width="672" /></p>
+<pre class="r"><code>bptest(model.log)# the test confirms the log transformation removes issues of heteroskedasticity</code></pre>
+<pre><code>## 
+##  studentized Breusch-Pagan test
+## 
+## data:  model.log
+## BP = 13.745, df = 12, p-value = 0.3173</code></pre>
+</div>
+<div id="transformations" class="section level2">
+<h2>3) Transformations</h2>
+<p>After realising the residual plots indicated heteroscedasticity we looked at performing a transformation. At first, we tried using the squared root of the salary to correct the heteroscedasticity test. However, when we checked it again using the bp-test it still indicated that it was heteroskedastic. Next, we applied a box-cox transformation. This gave a lambda of approx. -0.5; which got rid of the heteroscedasticity problem with a p value of 0.052. But we thought that this may not have cleared the issue once we removed outliers and thus could further be improved, so we also conducted a logarithmic transformation on the salary (“formula.log”), just to see if we could find a more significant value. The bp-test on the log transformation yielded a p-value of 0.1344. This showed that the log transformation cleared the heteroscedasticity issues. We also analysed the graphs again which improved as slope was less curved and seemed to have more of a normal distribution (Q-Q plot).
+We then looked at the summary of the updated formula. The F-test is still significant, however r squared had decreased to 0.7844 as well as the adjusted R squared falling to 0.7757. Though is proportion the percentage before and after the transformation is still roughly 1.1%. We also noticed that the significant variables had changed, so the only variable with significance at 0.001 was JobGrade, and the other significant variables then were, EducLev, Gender, PerfRev and YrsExper.
+So, we decided to move forward with the log transformation due to it effectively being able to remove heteroscedasticity from the data set.</p>
+<pre class="r"><code>## Selecting dependent variables using stepwise method
+step(model.allvars,direction = &quot;both&quot;)</code></pre>
+<pre><code>## Start:  AIC=929.47
+## Salary ~ EducLev + JobGrade + YrHired + Gender + PerfRev + ITJob + 
+##     YrsExper + Age
+## 
+##            Df Sum of Sq   RSS     AIC
+## - EducLev   5     457.1 16470  925.32
+## - ITJob     1      32.7 16045  927.89
+## - Age       1      83.0 16096  928.54
+## &lt;none&gt;                  16013  929.47
+## - PerfRev   1     301.8 16314  931.35
+## - YrHired   1     681.6 16694  936.14
+## - Gender    1     897.4 16910  938.81
+## - YrsExper  1    1796.7 17809  949.59
+## - JobGrade  1   13580.4 29593 1055.21
+## 
+## Step:  AIC=925.32
+## Salary ~ JobGrade + YrHired + Gender + PerfRev + ITJob + YrsExper + 
+##     Age
+## 
+##            Df Sum of Sq   RSS     AIC
+## - ITJob     1      52.9 16523  923.99
+## - Age       1     111.5 16581  924.73
+## &lt;none&gt;                  16470  925.32
+## - PerfRev   1     342.0 16812  927.60
+## + EducLev   5     457.1 16013  929.47
+## - YrHired   1     823.5 17293  933.47
+## - Gender    1     920.2 17390  934.63
+## - YrsExper  1    1677.4 18147  943.50
+## - JobGrade  1   23287.9 39758 1106.63
+## 
+## Step:  AIC=923.99
+## Salary ~ JobGrade + YrHired + Gender + PerfRev + YrsExper + Age
+## 
+##            Df Sum of Sq   RSS     AIC
+## - Age       1     114.3 16637  923.42
+## &lt;none&gt;                  16523  923.99
+## + ITJob     1      52.9 16470  925.32
+## - PerfRev   1     360.6 16883  926.48
+## + EducLev   5     477.3 16045  927.89
+## - YrHired   1     839.8 17362  932.30
+## - Gender    1     880.3 17403  932.79
+## - YrsExper  1    1688.6 18211  942.23
+## - JobGrade  1   23276.3 39799 1104.84
+## 
+## Step:  AIC=923.42
+## Salary ~ JobGrade + YrHired + Gender + PerfRev + YrsExper
+## 
+##            Df Sum of Sq   RSS     AIC
+## &lt;none&gt;                  16637  923.42
+## + Age       1     114.3 16523  923.99
+## + ITJob     1      55.7 16581  924.73
+## - PerfRev   1     297.6 16935  925.11
+## + EducLev   5     507.3 16130  926.98
+## - YrHired   1     747.6 17385  930.57
+## - Gender    1     874.4 17511  932.08
+## - YrsExper  1    2558.6 19196  951.18
+## - JobGrade  1   23579.2 40216 1105.01</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = Salary ~ JobGrade + YrHired + Gender + PerfRev + 
+##     YrsExper, data = bank1)
+## 
+## Coefficients:
+## (Intercept)     JobGrade      YrHired       Gender      PerfRev     YrsExper  
+##  -1023.6660       8.6396       0.5269       4.7577       0.7378       0.9360</code></pre>
+<pre class="r"><code>step(model.log,direction=&quot;both&quot;)</code></pre>
+<pre><code>## Start:  AIC=-888.01
+## log(Salary) ~ EducLev + JobGrade + YrHired + Gender + PerfRev + 
+##     ITJob + YrsExper + Age
+## 
+##            Df Sum of Sq    RSS     AIC
+## - EducLev   5   0.09005 2.6584 -890.84
+## - ITJob     1   0.00328 2.5716 -889.74
+## - Age       1   0.01094 2.5793 -889.12
+## &lt;none&gt;                  2.5683 -888.01
+## - YrHired   1   0.03810 2.6064 -886.95
+## - PerfRev   1   0.04582 2.6142 -886.33
+## - Gender    1   0.08417 2.6525 -883.30
+## - YrsExper  1   0.12808 2.6964 -879.89
+## - JobGrade  1   2.47897 5.0473 -749.49
+## 
+## Step:  AIC=-890.84
+## log(Salary) ~ JobGrade + YrHired + Gender + PerfRev + ITJob + 
+##     YrsExper + Age
+## 
+##            Df Sum of Sq    RSS     AIC
+## - ITJob     1    0.0060 2.6644 -892.37
+## - Age       1    0.0178 2.6762 -891.45
+## &lt;none&gt;                  2.6584 -890.84
+## - PerfRev   1    0.0472 2.7056 -889.18
+## - YrHired   1    0.0509 2.7093 -888.90
+## + EducLev   5    0.0901 2.5683 -888.01
+## - Gender    1    0.0800 2.7384 -886.67
+## - YrsExper  1    0.1177 2.7761 -883.83
+## - JobGrade  1    4.1977 6.8561 -695.78
+## 
+## Step:  AIC=-892.37
+## log(Salary) ~ JobGrade + YrHired + Gender + PerfRev + YrsExper + 
+##     Age
+## 
+##            Df Sum of Sq    RSS     AIC
+## - Age       1    0.0182 2.6825 -892.96
+## &lt;none&gt;                  2.6644 -892.37
+## + ITJob     1    0.0060 2.6584 -890.84
+## - PerfRev   1    0.0495 2.7139 -890.55
+## - YrHired   1    0.0522 2.7166 -890.34
+## + EducLev   5    0.0927 2.5716 -889.74
+## - Gender    1    0.0759 2.7403 -888.53
+## - YrsExper  1    0.1187 2.7830 -885.31
+## - JobGrade  1    4.2031 6.8675 -697.43
+## 
+## Step:  AIC=-892.96
+## log(Salary) ~ JobGrade + YrHired + Gender + PerfRev + YrsExper
+## 
+##            Df Sum of Sq    RSS     AIC
+## &lt;none&gt;                  2.6825 -892.96
+## + Age       1    0.0182 2.6644 -892.37
+## - PerfRev   1    0.0401 2.7226 -891.88
+## - YrHired   1    0.0419 2.7245 -891.74
+## + ITJob     1    0.0063 2.6762 -891.45
+## + EducLev   5    0.0998 2.5827 -890.85
+## - Gender    1    0.0752 2.7577 -889.21
+## - YrsExper  1    0.1985 2.8810 -880.11
+## - JobGrade  1    4.2555 6.9380 -697.31</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = log(Salary) ~ JobGrade + YrHired + Gender + PerfRev + 
+##     YrsExper, data = bank1)
+## 
+## Coefficients:
+## (Intercept)     JobGrade      YrHired       Gender      PerfRev     YrsExper  
+##   -4.123130     0.116065     0.003946     0.044124     0.008563     0.008244</code></pre>
+<pre class="r"><code># reveals signficant variables were EducLev + JobGrade + YrHired + Gender + PerfRev + YrsExper
+## Estimate models with selected variables</code></pre>
+</div>
+<div id="stepwise-analysis" class="section level2">
+<h2>4) Stepwise Analysis</h2>
+<p>At this point we were ready to run the stepwise analysis to determine which variables carried the most influence. We ran the stepwise analysis both ways (forwards and backwards) on the full model and the log transformed model. Both concluded by removing ITjob and Age. The only difference between both the full model and the log transformed model was the different coefficients for the remaining variables, which was expected.
+We thus adapted our equation to match the stepwise formula under the independent variables of EducLev, Job Grade, YrHired, Gender, PerfRev and YearsExpr and assessed the results of the formula.</p>
+<pre class="r"><code>## Estimate models with selected variables
+formula.step &lt;- Salary ~ EducLev + JobGrade + YrHired + Gender + PerfRev + YrsExper
+formula.log.step &lt;- log(Salary) ~ EducLev + JobGrade + YrHired + Gender + PerfRev + YrsExper  
+model.step &lt;- lm(formula.step,data=bank1)
+model.log.step &lt;- lm(formula.log.step,data=bank1)
+
+## Examine model and residuals
+resids.step &lt;- rstandard(model.step)
+resids.log.step &lt;- rstandard(model.log.step)
+summary(model.step)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = formula.step, data = bank1)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -23.837  -5.901  -1.387   5.277  28.707 
+## 
+## Coefficients:
+##              Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept) -955.5706   359.8730  -2.655  0.00857 ** 
+## EducLev2       2.6474     4.6418   0.570  0.56910    
+## EducLev3       3.7249     4.3843   0.850  0.39658    
+## EducLev4       3.8429     4.1897   0.917  0.36015    
+## EducLev5       7.4212     4.3735   1.697  0.09130 .  
+## EducLevN/A     3.5205    10.0908   0.349  0.72755    
+## JobGrade       7.8884     0.6109  12.913  &lt; 2e-16 ***
+## YrHired        0.4916     0.1787   2.751  0.00649 ** 
+## Gender         4.8881     1.4885   3.284  0.00121 ** 
+## PerfRev        0.7199     0.3970   1.813  0.07129 .  
+## YrsExper       0.9717     0.1717   5.661 5.26e-08 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 9.049 on 197 degrees of freedom
+## Multiple R-squared:  0.7898, Adjusted R-squared:  0.7791 
+## F-statistic: 74.01 on 10 and 197 DF,  p-value: &lt; 2.2e-16</code></pre>
+<pre class="r"><code>plot(model.step)</code></pre>
+<pre><code>## Warning: not plotting observations with leverage one:
+##   91</code></pre>
+<p><img src="/blogs/bank1_files/figure-html/outliers-1.png" width="672" /><img src="/blogs/bank1_files/figure-html/outliers-2.png" width="672" /><img src="/blogs/bank1_files/figure-html/outliers-3.png" width="672" /><img src="/blogs/bank1_files/figure-html/outliers-4.png" width="672" /></p>
+<pre class="r"><code>summary(resids.step) ## some large residuals here</code></pre>
+<pre><code>##      Min.   1st Qu.    Median      Mean   3rd Qu.      Max.      NA&#39;s 
+## -2.706362 -0.668445 -0.161516  0.000944  0.609100  3.249282         1</code></pre>
+<pre class="r"><code>summary(model.log.step)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = formula.log.step, data = bank1)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -0.28579 -0.07895 -0.01631  0.07071  0.36976 
+## 
+## Coefficients:
+##              Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept) -3.350765   4.553801  -0.736 0.462717    
+## EducLev2     0.036930   0.058736   0.629 0.530250    
+## EducLev3     0.061263   0.055478   1.104 0.270820    
+## EducLev4     0.071195   0.053017   1.343 0.180853    
+## EducLev5     0.109007   0.055342   1.970 0.050275 .  
+## EducLevN/A   0.096647   0.127688   0.757 0.450014    
+## JobGrade     0.106702   0.007730  13.804  &lt; 2e-16 ***
+## YrHired      0.003534   0.002261   1.563 0.119651    
+## Gender       0.047366   0.018835   2.515 0.012709 *  
+## PerfRev      0.008895   0.005023   1.771 0.078142 .  
+## YrsExper     0.008455   0.002172   3.892 0.000136 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 0.1145 on 197 degrees of freedom
+## Multiple R-squared:  0.7843, Adjusted R-squared:  0.7734 
+## F-statistic: 71.64 on 10 and 197 DF,  p-value: &lt; 2.2e-16</code></pre>
+<pre class="r"><code>plot(model.log.step)</code></pre>
+<pre><code>## Warning: not plotting observations with leverage one:
+##   91</code></pre>
+<p><img src="/blogs/bank1_files/figure-html/outliers-5.png" width="672" /><img src="/blogs/bank1_files/figure-html/outliers-6.png" width="672" /><img src="/blogs/bank1_files/figure-html/outliers-7.png" width="672" /><img src="/blogs/bank1_files/figure-html/outliers-8.png" width="672" /></p>
+<pre class="r"><code>summary(resids.log.step) ## some large residuals here</code></pre>
+<pre><code>##      Min.   1st Qu.    Median      Mean   3rd Qu.      Max.      NA&#39;s 
+## -2.564191 -0.713598 -0.152580  0.000744  0.668892  3.307503         1</code></pre>
+<pre class="r"><code>## Remove outliers and data with high leverage
+summary(influence.measures(model.step))</code></pre>
+<pre><code>## Potentially influential observations of
+##   lm(formula = formula.step, data = bank1) :
+## 
+##     dfb.1_ dfb.EdL2 dfb.EdL3 dfb.EdL4 dfb.EdL5 dfb.ELN/ dfb.JbGr dfb.YrHr
+## 5    0.43   0.04     0.05     0.07    -0.03     0.11     0.21    -0.43   
+## 6    0.25   0.01    -0.01    -0.05     0.07     0.01    -0.06    -0.25   
+## 10  -0.51   0.03     0.08    -0.02    -0.05    -0.09    -0.03     0.51   
+## 28  -0.02   0.26     0.27     0.29     0.27     0.12     0.01     0.02   
+## 42  -0.11   0.59     0.65     0.69     0.68     0.26    -0.18     0.10   
+## 48  -0.15   0.02    -0.01    -0.01     0.02    -0.01     0.16     0.15   
+## 64  -0.25  -0.01    -0.01    -0.01     0.04    -0.03     0.12     0.25   
+## 66   0.40  -0.04    -0.06    -0.03    -0.01     0.08     0.39    -0.40   
+## 69   0.17   0.02     0.18    -0.01     0.09    -0.01    -0.30    -0.17   
+## 91   0.00   0.00     0.00     0.00     0.00     0.00     0.00     0.00   
+## 98  -0.24   0.01     0.00     0.00     0.04    -0.03     0.12     0.24   
+## 105  0.01  -0.18    -0.19    -0.20    -0.19    -0.08     0.00    -0.01   
+## 111  0.36   0.04     0.01     0.01    -0.11     0.08     0.25    -0.36   
+## 139 -0.01  -0.09    -0.05     0.07    -0.05     0.00     0.02     0.01   
+## 177 -0.05  -0.33    -0.35    -0.37    -0.35    -0.17    -0.04     0.06   
+## 205 -0.03  -0.38    -0.39    -0.40    -0.38    -0.17    -0.04     0.04   
+##     dfb.Gndr dfb.PrfR dfb.YrsE dffit   cov.r   cook.d hat    
+## 5   -0.21    -0.18    -0.74    -0.94_*  0.82_*  0.08   0.11  
+## 6    0.23     0.04     0.19     0.75_*  0.90    0.05   0.10  
+## 10   0.05    -0.23     0.62     0.75_*  1.33_*  0.05   0.27_*
+## 28  -0.01    -0.04     0.00    -0.30    1.31_*  0.01   0.21_*
+## 42   0.05     0.12     0.07    -0.76_*  1.22_*  0.05   0.22_*
+## 48   0.11    -0.21     0.14     0.51    0.79_*  0.02   0.04  
+## 64  -0.25     0.24     0.15     0.54    0.80_*  0.03   0.05  
+## 66   0.20     0.33    -0.42     0.81_*  0.61_*  0.06   0.06  
+## 69  -0.03     0.02     0.15     0.66    0.82_*  0.04   0.07  
+## 91   0.00     0.00     0.00      NaN     NaN     NaN   1.00_*
+## 98  -0.25     0.13     0.16     0.49    0.80_*  0.02   0.04  
+## 105  0.00     0.03     0.00     0.21    1.32_*  0.00   0.21_*
+## 111  0.17    -0.29    -0.35    -0.65    0.74_*  0.04   0.05  
+## 139 -0.10     0.60    -0.16     0.74_*  0.61_*  0.05   0.05  
+## 177  0.00    -0.12     0.05     0.42    1.32_*  0.02   0.23_*
+## 205  0.01     0.08     0.00     0.42    1.30_*  0.02   0.21_*</code></pre>
+<pre class="r"><code>summary(influence.measures(model.log.step))</code></pre>
+<pre><code>## Potentially influential observations of
+##   lm(formula = formula.log.step, data = bank1) :
+## 
+##     dfb.1_ dfb.EdL2 dfb.EdL3 dfb.EdL4 dfb.EdL5 dfb.ELN/ dfb.JbGr dfb.YrHr
+## 1    0.09   0.01     0.00    -0.01     0.01     0.01     0.01    -0.09   
+## 5    0.34   0.03     0.04     0.06    -0.02     0.09     0.17    -0.34   
+## 7    0.10   0.01     0.02     0.06     0.07    -0.01    -0.24    -0.10   
+## 10  -0.34   0.02     0.05    -0.01    -0.03    -0.06    -0.02     0.34   
+## 28  -0.02   0.28     0.29     0.31     0.29     0.13     0.01     0.02   
+## 34   0.08  -0.05    -0.01     0.04     0.04    -0.02    -0.25    -0.08   
+## 42  -0.10   0.52     0.58     0.61     0.61     0.23    -0.16     0.09   
+## 69   0.20   0.02     0.21    -0.02     0.11    -0.02    -0.35    -0.20   
+## 91   0.00   0.00     0.00     0.00     0.00     0.00     0.00     0.00   
+## 105  0.01  -0.28    -0.29    -0.30    -0.29    -0.12    -0.01    -0.01   
+## 111  0.34   0.04     0.01     0.01    -0.10     0.08     0.24    -0.34   
+## 139 -0.01  -0.09    -0.05     0.07    -0.05     0.00     0.02     0.01   
+## 177 -0.04  -0.25    -0.27    -0.28    -0.26    -0.13    -0.03     0.04   
+## 205 -0.03  -0.31    -0.32    -0.33    -0.32    -0.14    -0.03     0.03   
+##     dfb.Gndr dfb.PrfR dfb.YrsE dffit   cov.r   cook.d hat    
+## 1    0.04    -0.01    -0.01     0.15    1.19_*  0.00   0.12  
+## 5   -0.17    -0.14    -0.58    -0.74_*  0.94    0.05   0.11  
+## 7    0.03    -0.03     0.10     0.42    0.81_*  0.02   0.03  
+## 10   0.03    -0.16     0.41     0.50    1.40_*  0.02   0.27_*
+## 28  -0.01    -0.05     0.00    -0.32    1.30_*  0.01   0.21_*
+## 34   0.03     0.30     0.07     0.50    0.80_*  0.02   0.04  
+## 42   0.04     0.11     0.06    -0.68    1.25_*  0.04   0.22_*
+## 69  -0.03     0.02     0.18     0.79_*  0.71_*  0.05   0.07  
+## 91   0.00     0.00     0.00      NaN     NaN     NaN   1.00_*
+## 105  0.00     0.05     0.00     0.32    1.30_*  0.01   0.21_*
+## 111  0.16    -0.28    -0.33    -0.61    0.77_*  0.03   0.05  
+## 139 -0.10     0.62    -0.16     0.75_*  0.59_*  0.05   0.05  
+## 177  0.00    -0.09     0.03     0.32    1.34_*  0.01   0.23_*
+## 205  0.01     0.06     0.00     0.35    1.31_*  0.01   0.21_*</code></pre>
+<pre class="r"><code>outlierTest(model.step)</code></pre>
+<pre><code>## No Studentized residuals with Bonferroni p &lt; 0.05
+## Largest |rstudent|:
+##     rstudent unadjusted p-value Bonferroni p
+## 139 3.331527          0.0010322      0.21367</code></pre>
+<pre class="r"><code>outliers.step &lt;- c(1,5,10,14,66)# significant individuals from outlier test that need to be removed
+outlierTest(model.log.step)</code></pre>
+<pre><code>## No Studentized residuals with Bonferroni p &lt; 0.05
+## Largest |rstudent|:
+##     rstudent unadjusted p-value Bonferroni p
+## 139 3.394699         0.00083152      0.17212</code></pre>
+<pre class="r"><code>outliers.log.step &lt;- c(1,5,10,14,139)# significant individuals revealed from log transformed that need to be removed from the log transform data, leverage significant level 3(p+1)/207=0.101
+bank1.clean1 &lt;- bank1[-outliers.step,]
+bank1.log.clean1 &lt;- bank1[-outliers.log.step,]</code></pre>
+</div>
+<div id="outliers" class="section level2">
+<h2>5) Outliers</h2>
+<p>To test for outliers, we ran a summary on the influence of outliers to identify which employees were deemed as outliers in the data (“summary(influence.measure)”). Based on this we realised that the cooks distance showed no issues with outliers. However, the hat values on standardized residuals pointed out quite a few leverage points where above 0.101( 3(p+1)/n, for p variables and n individuals in the model as a standard for rejection) and thus would have to be removed. For both models the leverage points identified were 1,5,10 and 14.
+We then performed the outlier test, to identify the outliers in the data. For The full model, the outlier identified was employee 66 and for the log transformed model employee 139 was identified. This correlated with the previous residual graphs in Figures 1 and 2 used to analyse the full and transformed models; since they are points that are identified on the graph due to its spread-out locations on the graphs. So, we removed each from their respective models alongside the leverage points. Leaving both models, model.step.clean1 (full variable model) and model.log.step.clean1 (transformed model).</p>
+<pre class="r"><code>## New models estimated with cleaned data
+model.step.clean1 &lt;- lm(formula.step,data=bank1.clean1)
+model.log.step.clean1 &lt;- lm(formula.log.step,data=bank1.log.clean1)
+
+plot(model.log.step.clean1)# new plots reveal less U SHAPED residuals thus the log transformation and outlier removal corrected issues.</code></pre>
+<pre><code>## Warning: not plotting observations with leverage one:
+##   87</code></pre>
+<p><img src="/blogs/bank1_files/figure-html/final%20models-1.png" width="672" /><img src="/blogs/bank1_files/figure-html/final%20models-2.png" width="672" /><img src="/blogs/bank1_files/figure-html/final%20models-3.png" width="672" /><img src="/blogs/bank1_files/figure-html/final%20models-4.png" width="672" /></p>
+<pre class="r"><code>## Test for normality and heteroskedasticity in residuals
+bptest(model.step.clean1) ## residuals for the untransformed model fail the heteroskedasticity test</code></pre>
+<pre><code>## 
+##  studentized Breusch-Pagan test
+## 
+## data:  model.step.clean1
+## BP = 22.963, df = 10, p-value = 0.01088</code></pre>
+<pre class="r"><code>bptest(model.log.step.clean1) ## residuals for the log model pass the heteroskedasticity test</code></pre>
+<pre><code>## 
+##  studentized Breusch-Pagan test
+## 
+## data:  model.log.step.clean1
+## BP = 11.614, df = 10, p-value = 0.3117</code></pre>
+<pre class="r"><code>hist(rstandard(model.step))# the original model shows normality</code></pre>
+<p><img src="/blogs/bank1_files/figure-html/final%20models-5.png" width="672" /></p>
+<pre class="r"><code>hist(rstandard(model.log.step.clean1))#the new transformed model looks less normal so conduct a normality test to confirm still normal</code></pre>
+<p><img src="/blogs/bank1_files/figure-html/final%20models-6.png" width="672" /></p>
+<pre class="r"><code>shapiro.test(rstandard(model.log.step.clean1)) ## residuals for the log model pass the normality test p value greater than the 5% sig level</code></pre>
+<pre><code>## 
+##  Shapiro-Wilk normality test
+## 
+## data:  rstandard(model.log.step.clean1)
+## W = 0.99104, p-value = 0.2457</code></pre>
+<pre class="r"><code>## Test for multicollinearity
+vif(model.log.step.clean1) ## no VIF values &gt; 10 </code></pre>
+<pre><code>##              GVIF Df GVIF^(1/(2*Df))
+## EducLev  2.042557  5        1.074032
+## JobGrade 2.076467  1        1.440995
+## YrHired  3.751742  1        1.936941
+## Gender   1.224175  1        1.106424
+## PerfRev  1.099705  1        1.048668
+## YrsExper 4.386203  1        2.094326</code></pre>
+<pre class="r"><code>#cor(bank1.log.clean1[rhs.vars(formula.log.step)]) ## only one of the correlations is &gt; 0.8 in magnitude bit only marginally so, vif shows not significantly enough
+## Final model
+summary(model.log.step.clean1)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = formula.log.step, data = bank1.log.clean1)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -0.30214 -0.07362 -0.01009  0.06888  0.30815 
+## 
+## Coefficients:
+##              Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept) -7.176904   5.314932  -1.350  0.17850    
+## EducLev2     0.038474   0.056869   0.677  0.49951    
+## EducLev3     0.060103   0.053792   1.117  0.26525    
+## EducLev4     0.062685   0.051367   1.220  0.22384    
+## EducLev5     0.112906   0.053616   2.106  0.03652 *  
+## EducLevN/A   0.072760   0.124517   0.584  0.55968    
+## JobGrade     0.104040   0.007559  13.764  &lt; 2e-16 ***
+## YrHired      0.005433   0.002638   2.059  0.04082 *  
+## Gender       0.054069   0.018512   2.921  0.00391 ** 
+## PerfRev      0.006859   0.005038   1.361  0.17498    
+## YrsExper     0.011358   0.002732   4.157 4.86e-05 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 0.1108 on 192 degrees of freedom
+## Multiple R-squared:  0.7806, Adjusted R-squared:  0.7692 
+## F-statistic: 68.31 on 10 and 192 DF,  p-value: &lt; 2.2e-16</code></pre>
+</div>
+<div id="final-regression-and-checks" class="section level2">
+<h2>6) Final Regression and Checks</h2>
+<p>After improving our final model by removing the outliers according to the tests run previously, we then checked the residual and standardized residual plots to ensure the model (“model.log.step.clean1”)had corrected all issues identified above. Based on the graphs, we can see an improvement in our residual plots with a reduction in the U shaped curve as well an improved distribution based on the Q-Q plot</p>
+<p>Leverage had been reduced from a 0.25 level to a 0.1 as shown in the Residuals vs leverage.
+We checked for heteroscedasticity again, by repeating the bp-test for the transformed model, model.log.step.clean1; which showed that the model maintained its lack of heteroscedasticity. We checked normality by analysing the histograms for each model (Figure 5). The original data (“model.step.clean1”) showed normality. Our model, model.log.step.clean1, was much more skewed than the other histogram.
+To check that we still maintained normality, we ran the Shapiro Wilk normality test (“shapiro.test(rstandard())”), which gave a p value of 0.05481, which is above the 5% significance level and therefore still displayed normality.
+Before we concluded we checked for multicollinearity by working out the variance inflation factors (“vif”), which would show multicollinearity issues if any of the variables have a value over 10. None of the variables displayed a value over 10, but the highest value was YrsExper at 4.2344. To check for any possible problems, we analysed the correlation (“cor”) between the variables. This showed a quite a high correlation between YrsExper and YrHired at -0.8, however its vif wasn’t high enough to be a problem, it would understandably be correlated and removing either of these variables considerably reduces the R-Squared value.
+Therefore, our Final Model is the log of the response, with the YrBorn, Age and ITJob removed and all types of outliers removed too. The model at the end of step 5 (“model.log.step.clean1”) displayed at the beginning of this report which satisfies normality, has no heteroscedasticity and displays adequate R-squared and adjusted R-squared values.</p>
+<p>** Our final model is log(y) = -7.202197 + 0.024271x_1 + 0.10658x_2 + 0.005429x_3 + 0.053014x_4 + 0.010657x_5 + 0.01029x_6 + e
+where:
+y = Predicted Salary
+x_1 = Education Level
+x_2 = Job Grade
+x_3 = Year Hired
+x_4 = Gender
+x_5 = Performance Review
+x_6 = Years of Experience
+e = error term **</p>
+</div>
+<div id="interpretation-and-conclusion" class="section level2">
+<h2>Interpretation and Conclusion</h2>
+<p>When beginning to analyse out data, we had our initial hypothesis. We believed that the most important variables would include Age, EducLev, YrsExper, ITJob, JobGrade and Gender. These were based off the effects of society on certain factors especially for gender where there is a clear gender gap between male and female employees. It was also expected that education levels and years’ experience would positively affect salary. We thought however, that the YrHired wouldn’t have too much of an effect as well as for performance review which we assumed could be very biased. However, as seen Age and ITJob weren’t significant as they were eliminated during the stepwise process. While Age being removed did not seem too surprising as years’ experience has strong significance. It was interesting to note that Advanced IT skills had no significant effect on Salary as one would expect any additional skills would result in a higher Salary.
+We went further to test the final model on a few of the employees. Employee A, with an age of 61, education level of 5, job grade: 6, year hired: 1988, male, performance review: 5 and 29 years’ experience. The actual salary is £122,000, whilst the model predicted gives £116,351. This is out by roughly 4.6% out from the actual figure. Also looking at the last person’s data, the 17-year-old earning £59,000, education level of 2, job grade: 1, year hired: 2017, male, performance review:6 and 0 years’ experience; The predicted salary is £55,723. These deviations are however understandable as Age, ITJob and YrBorn were removed which would have accounted for the minor differences and our R-squared value isn’t perfectly 1.</p>
+<p>Based on our findings, we would like to recommend that the bank improves on their gender pay gap, as it is quite disappointing that gender is a significant variable that still determines salary. We would also recommend that the performance review method is improved to minimalize the risk of bias, since we saw the possibility of bias from the start and perhaps the bank reassess the value of IT skills within the sector.</p>
+</div>
+<div id="suggestion-for-further-work" class="section level2">
+<h2>Suggestion for further work</h2>
+<p>There are many methods that can be implemented to improve the quality of this model. Firstly, the method of obtaining data. We were not told how this information was obtained, whether it was in person, via email or interview. This brings suspicion on the quality and reliability of data supplied by each employee. One problem we mentioned was having to remove one of the employee’s data as the education level was N/A, which reduced the precision. This could have been prevented by ensuring that the method applied is used effectively enough to minimalize the possibility of error.
+Secondly, how the categories were defined. An example is the salaries of the employees, how were the salaries calculated? Was the calculation method defined prior to requesting the salary (e.g. does the salary include bonuses), since this could have influenced our initial opinion on the 17-year-olds, £59000 salary. This can have a large impact on the outcome of this analysis, as things like predefinition can influence the overall outcome. Similarly, we weren’t told how the individuals were selected, if it truly was random, like we have assumed for the model’s purpose. This would also show whether the model is biased, however we cannot determine that. Other methods include analysing other characteristics such as race or demand for their positions and acquiring further information about the location as size of the bank.</p>
+</div>
+<div id="understanding-the-dynamics-of-what-characterized-high-earning-individuals" class="section level1">
+<h1>Understanding the dynamics of what characterized high earning individuals</h1>
+<p>This part of the report serves to understand the dynamics of individuals who are earning £75000 or above, which we will refer to as “high fliers” and whether such individuals have particular characteristics that differentiate them from their lower earning counterparts. Of the 207 observations excluding individual with employee number 92 there are a total of 74 individuals that fall into this category. That’s an average of roughly 36% of individuals within the bank.
+Assessing each independent variable against Salary rather interesting characteristics seem to arise. This was done through a statistical test known as a t-test which is an analysis of two populations means through the use of statistical examination; This test is commonly used in testing the difference between the samples when the variances of two normal distributions are not known as is the case with our two samples of high fliers and non-highfliers.(Staff,2018)
+Upon conduction of individual t-tests of Salary against each independent variable the following results arose (It should be noted that this test was not conducted on Year Hired as an average Year would not be of much relevance):</p>
+<pre class="r"><code>### Compare high flyer employees with non high flyers
+## Create dummy variable to indicate &quot;high flyer&quot;
+bank1$highflyer &lt;- 0
+bank1[bank1$Salary &gt; 75,&quot;highflyer&quot;] &lt;- 1
+## check differences between highflyers and non high flyers on ordinal variables
+t.test(YrHired~highflyer,data=bank1)# significant p value highfliers have on average a higher education level </code></pre>
+<pre><code>## 
+##  Welch Two Sample t-test
+## 
+## data:  YrHired by highflyer
+## t = 1.4472, df = 114.41, p-value = 0.1506
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  -0.494122  3.174039
+## sample estimates:
+## mean in group 0 mean in group 1 
+##        2010.797        2009.457</code></pre>
+<pre class="r"><code>t.test(JobGrade~highflyer,data=bank1)#significant p value, highfliers on averages have  significantly higher positions</code></pre>
+<pre><code>## 
+##  Welch Two Sample t-test
+## 
+## data:  JobGrade by highflyer
+## t = -14.606, df = 107.06, p-value &lt; 2.2e-16
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  -2.759832 -2.100209
+## sample estimates:
+## mean in group 0 mean in group 1 
+##        1.898551        4.328571</code></pre>
+<pre class="r"><code>t.test(YrsExper~highflyer,data=bank1)#significant p value, highfliers on averages have more experience mean 12 years</code></pre>
+<pre><code>## 
+##  Welch Two Sample t-test
+## 
+## data:  YrsExper by highflyer
+## t = -4.6699, df = 99.238, p-value = 9.468e-06
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  -7.029432 -2.837234
+## sample estimates:
+## mean in group 0 mean in group 1 
+##        7.166667       12.100000</code></pre>
+<pre class="r"><code>t.test(Age~highflyer,data=bank1)# not a significant p value can&#39;t consider a difference</code></pre>
+<pre><code>## 
+##  Welch Two Sample t-test
+## 
+## data:  Age by highflyer
+## t = -3.6545, df = 141.43, p-value = 0.0003623
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  -8.212946 -2.446682
+## sample estimates:
+## mean in group 0 mean in group 1 
+##        33.41304        38.74286</code></pre>
+<pre class="r"><code>t.test(PerfRev~highflyer,data=bank1)#not a significant p value</code></pre>
+<pre><code>## 
+##  Welch Two Sample t-test
+## 
+## data:  PerfRev by highflyer
+## t = -3.0625, df = 137.9, p-value = 0.002639
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  -1.1952229 -0.2573651
+## sample estimates:
+## mean in group 0 mean in group 1 
+##        4.159420        4.885714</code></pre>
+<pre class="r"><code>## check differences between highflyers and non high flyers on binary variables
+tbl.gender1 &lt;- table(gender=bank1$Gender,highflyer=bank1$highflyer)
+tbl.gender1</code></pre>
+<pre><code>##       highflyer
+## gender   0   1
+##      0 106  34
+##      1  32  36</code></pre>
+<pre class="r"><code>summary(tbl.gender1)# significant Chi sqr. almost equal amounts of men and woman highfliers but as a proportion of total men and women aprx 53% of men in bank highfliers while only 24.5% of women in the bank are highfliers</code></pre>
+<pre><code>## Number of cases in table: 208 
+## Number of factors: 2 
+## Test for independence of all factors:
+##  Chisq = 16.832, df = 1, p-value = 4.084e-05</code></pre>
+<pre class="r"><code>tbl.it &lt;- table(ITJob=bank1$ITJob,highflyer=bank1$highflyer)
+tbl.it</code></pre>
+<pre><code>##      highflyer
+## ITJob  0  1
+##     0 53 37
+##     1 85 33</code></pre>
+<pre class="r"><code>summary(tbl.it) #p value not significant at 5% and there are more individuals with IT that arent highfliers than those who are</code></pre>
+<pre><code>## Number of cases in table: 208 
+## Number of factors: 2 
+## Test for independence of all factors:
+##  Chisq = 3.951, df = 1, p-value = 0.04684</code></pre>
+<ol style="list-style-type: decimal">
+<li>Education Levels
+The mean level for high fliers is 4.38 while for non-high fliers the mean is 3.57. This indicates that high fliers have at least an undergraduate degree or higher with non-high fliers mostly achieving university diploma or equivalent/undergraduate study with no degree awarded or below.</li>
+<li>Job Grade
+The mean level for high fliers is 4.24 which is significantly higher than the mean for non-high fliers of 1.87 this indicates that high fliers on average have job grades ranging in the highest categories while their non-higher flier counterparts on average have the more individuals in the lowest job grades.</li>
+<li>Years’ Experience
+The mean level for high fliers is 11.80 while non-higher fliers had a mean of only 7.15. Which as expected suggests that to earn a higher salary more years of experiences are required; on average nearly 12 years.</li>
+<li>Year Born and Age
+As with the model calculated year born and age are essentially the same variables they referred to as being perfectly correlated as such we will only consider Age. While this test was less significant than that of the other variables, it cannot be ignored. The mean age for high fliers is 38.66, approx. 39 while non-high fliers mean is 33.28, approx. 33 suggesting on average that high fliers are generally older; this is consistent with Years’ Experience as to achieve more years’ experience one would generally have to be older.</li>
+<li>Performance Review
+The mean for High fliers is 4.86 while non-high fliers have a mean of 4.15. While these values don’t differ too significantly is does suggest that highfliers have a slightly higher performance on average.</li>
+</ol>
+<p>For the remaining factors due to them being binary variables a different Statistical test was conducted known as the Chi-Square test. Chi square test for testing goodness of fit is used to decide whether there is any difference between the observed value and the expected value. (En.Wikipedia.org,2018)
+6) Gender
+Non-High flier High Flier
+Female 103 36
+Male 30 38
+The dynamics of individuals are as follows:</p>
+<p>While there are fairly equal numbers of male and female highfliers what is interesting to note is that 55.8% of total males and only 25.9% of total females are High fliers. This suggests that although the bank employs more females than males it is more likely that a male in the bank will be a high-flier than not while a female only has approx. a 1-in-4 chance of being a highflier suggesting that females are less likely to occupy High flier positions.
+7) Advanced IT Skills (IT Job)
+Non-High flier High Flier
+No IT Skills 51 39
+Advance IT Skills 82 35
+The dynamics are as follows:</p>
+<p>The table suggests that although there is a higher proportion of individuals with advanced IT skills, only around 30% of them are high fliers while 43.3% of individuals without IT skills are higher fliers. This suggests that IT skills don’t affect whether individuals earn over £75000; it seems to be a disadvantage as those without IT skills are more likely to be high fliers.</p>
+<p>Thus, it can be said that there are unique characteristics that determine the level of earnings of high fliers within the bank. This includes having higher education levels and jobs grades, more years’ experience (older employees) and those that perform better on average. It can also be said that a higher proportion of males are high fliers despite there being more female employees in the bank and that having advanced IT skills doesn’t correlate to greater chances of earning more.</p>
+</div>

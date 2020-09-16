@@ -1,14 +1,14 @@
 ---
-categories:
-- ""
-- ""
-date: "2017-09-08"
+title: "Mask Acceptance"
+date: '2017-09-08'
 description: Is mask acceptance high in the US? A NYT helps us discover the answer
-draft: false
+draft: no
 image: pic07.jpg
-keywords: ""
+keywords: ''
 slug: blog5
-title: Mask Acceptance
+categories:
+- ''
+- ''
 ---
 
 
