@@ -6,7 +6,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 ```
 
 
@@ -23,7 +23,7 @@ library(readr)
 
 ## Introduction
 
-The data provided is from an anonomous bank, which includes the information on 208 employees of a certain bank, with 11 fields of interest filled with information of each employee. These are all middle ranking members of staff; excluding menial workers and senior management. Unfortunately, we are unable to specify the method of selection or if it includes all the middle ranking employees in the bank. However, we will assume it is simple random sampling, so it is unbiased though we cannot verify the precision of the data set.
+The data provided is from an anonymous bank, which includes the information on 208 employees of a certain bank, with 11 fields of interest filled with information of each employee. These are all middle ranking members of staff; excluding menial workers and senior management. Unfortunately, we are unable to specify the method of selection or if it includes all the middle ranking employees in the bank. However, we will assume it is simple random sampling, so it is unbiased though we cannot verify the precision of the data set.
 In this report we are analysing the relation between the employee salary (in pounds) and the 10 other variables. The other variables include: Employee, Education level (“EducLev”); Job grade (“JobGrade”); Year born (“YrHired”); Gender (“Gender”); Performance review (“PerfRev”); IT job (“ITJob”); Years’ experience (“YrsExper”) and Age (“Age”).
 
 We will be using all this information to produce a statistical regression model to predict the salary as well as analysing the final result in comparison to our hypothesis on which variables we would have thought to be the most influential on the salary of employees.
