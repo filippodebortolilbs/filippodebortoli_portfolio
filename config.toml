@@ -92,15 +92,15 @@ disqusShortname = ""
     # Display your showcases here.
     
     [[params.tiles.showcase]]
+      title = "Formulating a model for the Salary Structure in a bank"
+      subtitle = "Regression analysis and examination of high earning individuals"
+      image = "pic02.jpg"
+      url = "blogs/bank1"
+    [[params.tiles.showcase]]
       title = "NYT Masks"
       subtitle = "An analysis of mask use in the US"
       image = "pic01.jpg"
       url = "blogs/blog5"
-    [[params.tiles.showcase]]
-      title = "Tempus"
-      subtitle = "Feugiat Amet Tempus"
-      image = "pic02.jpg"
-      url = "blogs/tempus"
 
     [[params.tiles.showcase]]
       title = "Magna"
