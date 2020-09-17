@@ -22,6 +22,8 @@ library(dplyr)
 library(readr)
 ```
 
+By Filippo de Bortoli and Jason Lubner (MAM 2021)
+
 ## Introduction
 
 The data provided is from an anonymous bank, which includes the information on 208 employees of a certain bank, with 11 fields of interest filled with information of each employee. These are all middle ranking members of staff; excluding menial workers and senior management. Unfortunately, we are unable to specify the method of selection or if it includes all the middle ranking employees in the bank. However, we will assume it is simple random sampling, so it is unbiased though we cannot verify the precision of the data set.

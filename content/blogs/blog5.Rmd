@@ -3,7 +3,7 @@ title: "Mask Acceptance"
 date: '2017-09-08'
 description: Is mask acceptance high in the US? A NYT helps us discover the answer
 draft: no
-image: pic07.jpg
+#image: pic07.jpg
 keywords: ''
 slug: blog5
 categories:
@@ -13,7 +13,7 @@ categories:
 
 
 
-```{r, setup, echo=FALSE}
+```{r, setup, echo=FALSE, include=FALSE}
 knitr::opts_chunk$set(
   message = FALSE, 
   warning = FALSE, 
@@ -110,6 +110,7 @@ county_full <- left_join(county_map, county_data, by = "id")
 
 county_masks_full <- left_join(county_full, nyt_mask_survey, 
                                 by = c("id"="countyfp"))
+
 ```
 
 ## Building our choropleth plot
@@ -133,15 +134,11 @@ p2 <- p1 +
 p3 <- p1 + 
   scale_fill_gradient2()
 
-# get different colours from https://colorbrewer2.org/
-# the one shown here is https://colorbrewer2.org/#type=diverging&scheme=BrBG&n=6
+
 p4 <- p1 + 
   scale_fill_gradientn(colours = c('#8c510a','#d8b365','#f6e8c3','#c7eae5','#5ab4ac','#01665e'))
 
-p1
-p2
-p3
-p4
+
 
 
 p4 + labs(fill = "Mask acceptance, (Mostly Yes - Mostly No)", 
@@ -153,7 +150,7 @@ p4 + labs(fill = "Mask acceptance, (Mostly Yes - Mostly No)",
 
 ## Checking for relationships
 
-Does mask use acceptance have any relation with some demographics? Let us explor the relationship between country household income, population, and % who voted republican in 2016
+Does mask use acceptance have any relation with some demographics? Let us explore the relationship between country household income, population, and % who voted republican in 2016
 
 ```{r, ggpairs, cache=TRUE}
 county_masks_full %>% 
@@ -161,3 +158,6 @@ county_masks_full %>%
   GGally::ggpairs()+
   theme_minimal()
 ```
+There seems to be quite a moderate negative correlation between the % of people who voted republican in 2016 and mask use acceptance (-0.515). Meaning that as the % of people who vote republican in a particular county increases the difference (delta) between people who mostly wear masks and those who mostly do not decreases.
+
+The difference (delta) between people who mostly wear masks and those who mostly do not  is positively weakly correlated with county population and household income (0.242 and 0.361 respectively). Meaning that people in more populous and more wealthy counties seem to wear masks more. This can be seen in the choropleth map we plotted above as more wealthy and populous areas such as the counties around Los Angeles, New York and major American cities tend to be more accepting of masks use.

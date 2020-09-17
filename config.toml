@@ -103,10 +103,10 @@ disqusShortname = ""
       url = "blogs/blog5"
 
     [[params.tiles.showcase]]
-      title = "Magna"
-      subtitle = "Lorem Etiam Nullam"
-      image = "pic03.jpg"
-      url = "blogs/magna"
+      title = "Beer, Wine and Spirits"
+      subtitle = "An analysis of the most alcohol-loving countries"
+      image = "blogs/alcohol.jpg"
+      url = "blogs/beerwine"
 
     #[[params.tiles.showcase]]
       #title = "Ipsum"
@@ -144,10 +144,10 @@ disqusShortname = ""
 
 
   # Contact section
-  [params.contact]
-    enable = true
-    buttonSend = "Send message"
-    buttonClear = "Clear"
+  #[params.contact]
+    #enable = false
+   # buttonSend = "Send message"
+    #buttonClear = "Clear"
 
     # Since this template is static, the contact form uses www.formspree.io as a
     # proxy. The form makes a POST request to their servers to send the actual
